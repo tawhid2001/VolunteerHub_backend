@@ -47,5 +47,8 @@ class Review(models.Model):
     comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('volunteer_work', 'user')
+
     def __str__(self):
         return f'{self.volunteer_work.title} - {self.user.username} - {self.get_rating_display()}'
