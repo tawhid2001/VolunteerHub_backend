@@ -56,10 +56,36 @@ class VolunteerWorkSerializer(serializers.ModelSerializer):
     def get_average_rating(self, obj):
         return obj.average_rating()
     
-class UserSerializer(serializers.ModelSerializer):
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['bio', 'profile_picture', 'contact_info']
+    
+class CustomUserSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        profile = instance.profile
+
+        # Update the User instance
+        instance.username = validated_data.get('username', instance.username)
+        instance.email = validated_data.get('email', instance.email)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.save()
+
+        # Update the Profile instance
+        profile.bio = profile_data.get('bio', profile.bio)
+        profile.profile_picture = profile_data.get('profile_picture', profile.profile_picture)
+        profile.contact_info = profile_data.get('contact_info', profile.contact_info)
+        profile.save()
+
+        return instance
 
 
 class JoinRequestSerializer(serializers.ModelSerializer):

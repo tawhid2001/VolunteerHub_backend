@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from .permissions import IsOrganizerOrReadOnly,IsOrganizer
 from dj_rest_auth.registration.views import RegisterView
 from rest_framework.views import APIView
-from .serializers import CustomRegisterSerializer
+from .serializers import CustomRegisterSerializer,CustomUserSerializer
 from django.contrib.auth.models import User
 from rest_framework import generics
 from rest_framework import status
@@ -111,18 +111,12 @@ def has_reviewed(request, volunteer_work_id):
     
 
 
-class UserDetailView(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+class UserDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CustomUserSerializer
 
-    def get(self, request, *args, **kwargs):
-        user_id = kwargs.get('pk')  # Get user ID from the URL
-        try:
-            user = User.objects.get(pk=user_id)
-            serializer = self.get_serializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+    def get_object(self):
+        return self.request.user
         
 
 class JoinRequestViewSet(viewsets.ModelViewSet):
