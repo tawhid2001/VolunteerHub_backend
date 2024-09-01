@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated,AllowAny
 from .models import VolunteerWork, Review,JoinRequest,Category
-from .serializers import VolunteerWorkSerializer, ReviewSerializer,UserSerializer,JoinRequestSerializer,CategorySerializer
+from .serializers import VolunteerWorkSerializer, ReviewSerializer,JoinRequestSerializer,CategorySerializer
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
