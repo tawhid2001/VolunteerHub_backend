@@ -13,7 +13,6 @@ urlpatterns = [
     path('my-works/', VolunteerWorkViewSet.as_view({'get': 'my_works'}), name='my-volunteer-works'),
     path('participated/', VolunteerWorkViewSet.as_view({'get': 'participated_works'}), name='participated-volunteer-works'),
     path('<int:pk>/', VolunteerWorkViewSet.as_view({'get': 'details'}), name='volunteer-work-details'),
-    path('user/', UserDetailView.as_view(), name='user-detail'),
     path('list/<slug:slug>/',CategoryworklistViewSet.as_view(), name='category-work-list'),
     path('volunteer-work/<int:volunteer_work_id>/has-reviewed/', has_reviewed, name='has-reviewed'),
 ]
