@@ -6,8 +6,12 @@ class IsOrganizerOrReadOnly(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        # Allow any authenticated user to view and create volunteer work
-        return request.user and request.user.is_authenticated
+        def has_permission(self, request, view):
+            # Allow any user to list or retrieve
+            if view.action in ['list', 'retrieve']:
+                return True
+            # For other actions, check if the user is authenticated
+            return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
         # Read permissions are allowed for any authenticated user
@@ -16,3 +20,16 @@ class IsOrganizerOrReadOnly(permissions.BasePermission):
 
         # Write permissions are only allowed to the organizer of the volunteer work
         return obj.organizer == request.user
+
+
+
+class IsOrganizer(permissions.BasePermission):
+    """
+    Custom permission to only allow organizers of a volunteer work to manage join requests.
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        # Check if the user is the organizer of the volunteer work
+        return obj.volunteer_work.organizer == request.user

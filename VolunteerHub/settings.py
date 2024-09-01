@@ -74,6 +74,10 @@ REST_FRAMEWORK = {
     ],
 }
 
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'core.serializers.CustomRegisterSerializer',
+}
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
