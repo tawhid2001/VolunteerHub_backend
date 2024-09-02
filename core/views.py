@@ -14,24 +14,6 @@ from rest_framework import generics
 from rest_framework import status
 from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view
-from django.core.mail import EmailMessage
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-
-def send_confirmation_email(user,user_email, activation_link):
-    subject = 'Confirm Your Email Address'
-    html_message = render_to_string('core/templates/account_confirmation_email.html', {
-        'user': user,
-        'activation_link': activation_link,
-        'site_name': 'VolunteerHub',
-    })
-    plain_message = strip_tags(html_message)
-    from_email = 'no-reply@example.com'
-    
-    email = EmailMessage(subject, plain_message, from_email, [user_email])
-    email.content_subtype = 'html'  # Main content is now text/html
-    email.send()
-
 
 class CustomRegisterView(RegisterView):
     serializer_class = CustomRegisterSerializer
