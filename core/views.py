@@ -20,7 +20,7 @@ from django.utils.html import strip_tags
 
 def send_confirmation_email(user,user_email, activation_link):
     subject = 'Confirm Your Email Address'
-    html_message = render_to_string('registration/account_confirmation_email.html', {
+    html_message = render_to_string('core/templates/account_confirmation_email.html', {
         'user': user,
         'activation_link': activation_link,
         'site_name': 'VolunteerHub',
