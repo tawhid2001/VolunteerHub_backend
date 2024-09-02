@@ -15,6 +15,12 @@ from rest_framework import status
 from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view
 from django.db.models import Count
+from django.http import HttpResponse
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
+from allauth.account.views import ConfirmEmailView
+from allauth.account.models import EmailAddress
 
 
 
@@ -219,3 +225,24 @@ class CategoryworklistViewSet(APIView):
         VolunteerWorks = VolunteerWork.objects.filter(category=category)
         serializer = VolunteerWorkSerializer(VolunteerWorks,many=True)
         return Response(serializer.data)
+    
+class CustomConfirmEmailView(ConfirmEmailView):
+    template_name = 'email_confirmation_message.html'
+
+    def get(self, request, *args, **kwargs):
+        key = kwargs['key']
+        try:
+            uidb64, token = key.split(':')
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+            email_address = EmailAddress.objects.get(user=user)
+            if default_token_generator.check_token(user, token) and not email_address.verified:
+                email_address.verified = True
+                email_address.save()
+                user.is_active = True
+                user.save()
+                return HttpResponse('Email confirmed and account activated.', status=200)
+            else:
+                return HttpResponse('Invalid confirmation link or user already activated.', status=400)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist, EmailAddress.DoesNotExist):
+            return HttpResponse('Invalid confirmation link.', status=400)

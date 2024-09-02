@@ -1,6 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+from VolunteerHub import settings
+from django.urls import reverse
 
 # Create your models here.
 
@@ -21,11 +29,30 @@ class Profile(models.Model):
     def __str__(self):
         return self.user.username
     
-    def save(self, *args, **kwargs):
+    def save(self,request, *args, **kwargs):
+        user = super().save(request)
         # If no profile picture is provided, use the default
         if not self.profile_picture:
             self.profile_picture = 'default_profile.jpg'
         super().save(*args, **kwargs)
+
+        user.is_active = False
+        user.save()
+        self.send_confirmation_email(user)
+
+    def send_confirmation_email(self, user):
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        confirm_url = settings.SITE_URL + reverse('account_confirm_email', kwargs={'key': f"{uid}:{token}"})
+        subject = 'Confirm your email address'
+        message = 'Please confirm your email address.'
+        html_message = render_to_string('email_confirmation_message.html', {
+            'user': user,
+            'confirmation_link': confirm_url,
+        })
+        email = EmailMultiAlternatives(subject,message,'',[user.email])
+        email.attach_alternative(html_message,"text/html")
+        email.send()
     
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
