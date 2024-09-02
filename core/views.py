@@ -14,6 +14,8 @@ from rest_framework import generics
 from rest_framework import status
 from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view
+from django.db.models import Count
+
 
 
 class CustomRegisterView(RegisterView):
@@ -25,9 +27,11 @@ class VolunteerWorkViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         # Apply different permissions for different actions
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['list', 'retrieve','details']:
             permission_classes = [AllowAny]
-        elif self.action in ['my_works', 'participated_works', 'details']:
+        elif self.action in ['my_works', 'participated_works']:
+            permission_classes = [IsAuthenticated]
+        elif self.action == 'create':
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsAuthenticated, IsOrganizerOrReadOnly]
@@ -68,6 +72,20 @@ class VolunteerWorkViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+class UserDetailViewById(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = CustomUserSerializer
+
+    def get(self, request, *args, **kwargs):
+        user_id = kwargs.get('pk')  # Get user ID from the URL
+        try:
+            user = User.objects.get(pk=user_id)
+            serializer = self.get_serializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -111,12 +129,54 @@ def has_reviewed(request, volunteer_work_id):
     
 
 
-class UserDetailView(generics.RetrieveUpdateAPIView):
-    permission_classes = [IsAuthenticated]
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
     serializer_class = CustomUserSerializer
 
-    def get_object(self):
-        return self.request.user
+class UserEditView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        user = request.user
+        data = request.data
+        files = request.FILES
+
+        # Update user fields
+        user.username = data.get('username', user.username)
+        user.email = data.get('email', user.email)
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+
+        # Save user changes
+        user.save()
+
+        # Update or create profile fields
+        profile = user.profile
+
+        # Update profile fields
+        profile.bio = data.get('bio', profile.bio)
+        profile.contact_info = data.get('contact_info', profile.contact_info)
+
+        # Handle file upload if provided
+        if 'profile_picture' in files:
+            profile.profile_picture = files['profile_picture']
+
+        # Save profile changes
+        profile.save()
+
+        # Return success response
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'profile': {
+                'bio': profile.bio,
+                'profile_picture': profile.profile_picture.url,
+                'contact_info': profile.contact_info,
+            }
+        }, status=status.HTTP_200_OK)
         
 
 class JoinRequestViewSet(viewsets.ModelViewSet):

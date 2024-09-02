@@ -15,11 +15,17 @@ STAR_CHOICES = [
 class Profile(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
     bio = models.TextField(blank=True,null=True)
-    profile_picture = models.ImageField(upload_to='profile_pics/',blank=True,null=True,default='./image/default_profile.jpg')
+    profile_picture = models.ImageField(upload_to='profile_pics/')
     contact_info = models.CharField(max_length=255,blank=True,null=True)
 
     def __str__(self):
         return self.user.username
+    
+    def save(self, *args, **kwargs):
+        # If no profile picture is provided, use the default
+        if not self.profile_picture:
+            self.profile_picture = 'default_profile.jpg'
+        super().save(*args, **kwargs)
     
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -31,6 +37,7 @@ class Category(models.Model):
 class VolunteerWork(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
+    image = models.ImageField(upload_to="work_images/",blank=True,null=True)
     location = models.CharField(max_length=255)
     date = models.DateTimeField()
     organizer = models.ForeignKey(User, related_name='organized_works', on_delete=models.CASCADE)
@@ -39,6 +46,11 @@ class VolunteerWork(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def save(self,*args,**kwargs):
+        if not self.image:
+            self.image = "default_image.jpg"
+        super().save(*args,**kwargs)
 
     def average_rating(self):
         reviews = self.reviews.all()

@@ -51,10 +51,11 @@ class VolunteerWorkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VolunteerWork
-        fields = ['id', 'title', 'description', 'location', 'date', 'organizer', 'participants', 'category', 'average_rating']
+        fields = ['id', 'title', 'description', 'location', 'date', 'organizer', 'participants', 'category', 'average_rating','image']
 
     def get_average_rating(self, obj):
         return obj.average_rating()
+    
     
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,33 +69,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']
 
-    def update(self, instance, validated_data):
-        profile_data = validated_data.pop('profile', {})
-        profile = instance.profile
-
-        # Update the User instance
-        instance.username = validated_data.get('username', instance.username)
-        instance.email = validated_data.get('email', instance.email)
-        instance.first_name = validated_data.get('first_name', instance.first_name)
-        instance.last_name = validated_data.get('last_name', instance.last_name)
-        instance.save()
-
-        # Update the Profile instance
-        profile.bio = profile_data.get('bio', profile.bio)
-        profile.profile_picture = profile_data.get('profile_picture', profile.profile_picture)
-        profile.contact_info = profile_data.get('contact_info', profile.contact_info)
-        profile.save()
-
-        return instance
-
-
 class JoinRequestSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
+    volunteer_work_title = serializers.CharField(source='volunteer_work.title', read_only=True)
     volunteer_work = serializers.PrimaryKeyRelatedField(queryset=VolunteerWork.objects.all())
 
     class Meta:
         model = JoinRequest
-        fields = ['id', 'volunteer_work', 'user', 'status', 'created_at']
+        fields = ['id', 'volunteer_work','volunteer_work_title', 'user', 'status', 'created_at']
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
