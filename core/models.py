@@ -21,24 +21,33 @@ STAR_CHOICES = [
 ]
 
 class Profile(models.Model):
-    user = models.OneToOneField(User,on_delete=models.CASCADE)
-    bio = models.TextField(blank=True,null=True)
-    profile_picture = models.ImageField(upload_to='profile_pics/')
-    contact_info = models.CharField(max_length=255,blank=True,null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    bio = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', default='default_profile.jpg')
+    contact_info = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.user.username
-    
-    def save(self,request, *args, **kwargs):
-        user = super().save(request)
-        # If no profile picture is provided, use the default
-        if not self.profile_picture:
+
+    def save(self, *args, **kwargs):
+        if not self.profile_picture or self.profile_picture == 'default_profile.jpg':
             self.profile_picture = 'default_profile.jpg'
         super().save(*args, **kwargs)
 
-        user.is_active = False
-        user.save()
-        self.send_confirmation_email(user)
+
+    def send_confirmation_email(self, user):
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        confirm_url = settings.SITE_URL + reverse('account_confirm_email', kwargs={'key': f"{uid}:{token}"})
+        subject = 'Confirm your email address'
+        message = 'Please confirm your email address.'
+        html_message = render_to_string('email_confirmation_message.html', {
+            'user': user,
+            'confirmation_link': confirm_url,
+        })
+        email = EmailMultiAlternatives(subject, message, '', [user.email])
+        email.attach_alternative(html_message, "text/html")
+        email.send()
 
     def send_confirmation_email(self, user):
         token = default_token_generator.make_token(user)
