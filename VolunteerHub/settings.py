@@ -181,5 +181,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # EMAIL_PORT = 587
 # EMAIL_HOST_USER = env("EMAIL")
 # EMAIL_HOST_PASSWORD = env("EMAIL_PASSWORD")
-# SITE_URL = 'https://volunteerhub-backend-zlno.onrender.com' 
-# SITE_ID=1
+SITE_URL = 'https://volunteerhub-backend-zlno.onrender.com' 
+SITE_ID=1
