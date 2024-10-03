@@ -26,7 +26,6 @@ class CustomRegisterSerializer(RegisterSerializer):
 
         # Create Profile
         profile_data = {
-            'profile_picture': self.cleaned_data.get('profile_picture'),
             'bio': self.cleaned_data.get('bio'),
             'contact_info': self.cleaned_data.get('contact_info'),
         }
@@ -51,10 +50,18 @@ class VolunteerWorkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VolunteerWork
-        fields = ['id', 'title', 'description', 'location', 'date', 'organizer', 'participants', 'category', 'average_rating','image']
+        fields = ['id', 'title', 'description', 'location', 'date', 'organizer', 'participants', 'category', 'average_rating','image_url']
 
     def get_average_rating(self, obj):
         return obj.average_rating()
+    
+    def create(self,validated_data):
+        image_url = validated_data.pop('image_url',None)
+        volunteer_work = VolunteerWork.objects.create(**validated_data)
+        if image_url:
+            volunteer_work.image_url = image_url
+            volunteer_work.save()
+        return volunteer_work
     
     
 class ProfileSerializer(serializers.ModelSerializer):
