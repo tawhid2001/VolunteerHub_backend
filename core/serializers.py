@@ -11,29 +11,31 @@ class CustomRegisterSerializer(RegisterSerializer):
 
     def get_cleaned_data(self):
         data = super().get_cleaned_data()
-        data['first_name'] = self.validated_data.get('first_name', '')
-        data['last_name'] = self.validated_data.get('last_name', '')
-        data['profile_picture'] = self.validated_data.get('profile_picture', '')
-        data['bio'] = self.validated_data.get('bio', '')
-        data['contact_info'] = self.validated_data.get('contact_info', '')
+        data.update({
+            'first_name': self.validated_data.get('first_name', ''),
+            'last_name': self.validated_data.get('last_name', ''),
+            'profile_picture': self.validated_data.get('profile_picture', None),
+            'bio': self.validated_data.get('bio', ''),
+            'contact_info': self.validated_data.get('contact_info', '')
+        })
         return data
 
     def save(self, request):
         user = super().save(request)
-        user.first_name = self.cleaned_data.get('first_name')
-        user.last_name = self.cleaned_data.get('last_name')
+        user.first_name = self.validated_data.get('first_name')
+        user.last_name = self.validated_data.get('last_name')
         user.save()
 
-        # Create Profile
+        # Get or create the Profile to avoid duplicate creation
         profile_data = {
-        'bio': self.cleaned_data.get('bio'),
-        'contact_info': self.cleaned_data.get('contact_info'),
+            'bio': self.validated_data.get('bio'),
+            'contact_info': self.validated_data.get('contact_info'),
+            'profile_picture': self.validated_data.get('profile_picture')
         }
+        Profile.objects.get_or_create(user=user, defaults=profile_data)
 
-        if self.cleaned_data.get('profile_picture'):
-            profile_data['profile_picture'] = self.cleaned_data.get('profile_picture')
-        
-        Profile.objects.create(user=user, **profile_data)
+        return user
+
 
 
 class ReviewSerializer(serializers.ModelSerializer):
