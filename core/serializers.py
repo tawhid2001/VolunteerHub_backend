@@ -26,12 +26,15 @@ class CustomRegisterSerializer(RegisterSerializer):
 
         # Create Profile
         profile_data = {
-            'bio': self.cleaned_data.get('bio'),
-            'contact_info': self.cleaned_data.get('contact_info'),
+        'bio': self.cleaned_data.get('bio'),
+        'contact_info': self.cleaned_data.get('contact_info'),
         }
+
+        if self.cleaned_data.get('profile_picture'):
+            profile_data['profile_picture'] = self.cleaned_data.get('profile_picture')
+        
         Profile.objects.create(user=user, **profile_data)
 
-        return user
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
