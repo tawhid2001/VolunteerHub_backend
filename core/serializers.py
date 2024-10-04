@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import VolunteerWork, Review,Profile,User,JoinRequest,Category
 from dj_rest_auth.registration.serializers import RegisterSerializer
+from rest_framework.authtoken.models import Token
+from django.core.mail import send_mail
+from django.conf import settings
 
 class CustomRegisterSerializer(RegisterSerializer):
     first_name = serializers.CharField(required=True)
@@ -11,32 +14,39 @@ class CustomRegisterSerializer(RegisterSerializer):
 
     def get_cleaned_data(self):
         data = super().get_cleaned_data()
-        data.update({
-            'first_name': self.validated_data.get('first_name', ''),
-            'last_name': self.validated_data.get('last_name', ''),
-            'profile_picture': self.validated_data.get('profile_picture', None),
-            'bio': self.validated_data.get('bio', ''),
-            'contact_info': self.validated_data.get('contact_info', '')
-        })
+        data['first_name'] = self.validated_data.get('first_name', '')
+        data['last_name'] = self.validated_data.get('last_name', '')
+        data['profile_picture'] = self.validated_data.get('profile_picture', '')
+        data['bio'] = self.validated_data.get('bio', '')
+        data['contact_info'] = self.validated_data.get('contact_info', '')
         return data
 
     def save(self, request):
+        # Save the user first
         user = super().save(request)
-        user.first_name = self.validated_data.get('first_name')
-        user.last_name = self.validated_data.get('last_name')
+        user.first_name = self.cleaned_data.get('first_name')
+        user.last_name = self.cleaned_data.get('last_name')
         user.save()
 
-        # Get or create the Profile to avoid duplicate creation
+        # Create Profile
         profile_data = {
-            'bio': self.validated_data.get('bio'),
-            'contact_info': self.validated_data.get('contact_info'),
-            'profile_picture': self.validated_data.get('profile_picture')
+            'bio': self.cleaned_data.get('bio'),
+            'contact_info': self.cleaned_data.get('contact_info'),
         }
-        Profile.objects.get_or_create(user=user, defaults=profile_data)
+
+        if self.cleaned_data.get('profile_picture'):
+            profile_data['profile_picture'] = self.cleaned_data.get('profile_picture')
+
+        # Ensure user is fully saved and assigned an ID
+        Profile.objects.create(user=user, **profile_data)
+
+        # Generate an auth token for the user after profile creation
+        Token.objects.create(user=user)
+
+        send_welcome_email(user.email, user.first_name)
 
         return user
-
-
+    
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
@@ -95,3 +105,30 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
+
+def send_welcome_email(user_email, first_name):
+    subject = 'Welcome to Our Platform!'
+    message = f'Hi {first_name},\n\nWelcome to our platform! We are excited to have you join our community.\n\nBest regards,\nThe Team'
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [user_email]
+
+    send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+
+def send_html_welcome_email(user_email, first_name):
+    subject = 'Welcome to Our Platform!'
+    message = f'Hi {first_name}, Welcome to our platform!'
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [user_email]
+
+    html_message = f"""
+    <html>
+        <body>
+            <p>Hi <strong>{first_name}</strong>,</p>
+            <p>Welcome to our platform! We are excited to have you join us.</p>
+            <p>Best regards,</p>
+            <p>The Team</p>
+        </body>
+    </html>
+    """
+
+    send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=html_message)
