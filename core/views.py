@@ -17,6 +17,8 @@ from rest_framework.decorators import api_view
 
 class CustomRegisterView(RegisterView):
     serializer_class = CustomRegisterSerializer
+    def perform_create(self, serializer):
+        user = serializer.save()
 
 class VolunteerWorkViewSet(viewsets.ModelViewSet):
     queryset = VolunteerWork.objects.all()
